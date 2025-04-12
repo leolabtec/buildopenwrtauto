@@ -18,7 +18,7 @@ fi
 
 cd "$SRC_DIR"
 
-# === 架构选择（自动识别） ===
+# === 架构选择 ===
 echo "🔍 正在加载平台架构列表..."
 make defconfig > /dev/null 2>&1 || true
 TARGETS=$(make info | grep '^Target:' | awk '{print $2}')
@@ -34,7 +34,7 @@ PROFILES=$(make info | grep -A50 "^Target: $TARGET/$SUBTARGET" | grep '^Target P
 DEFAULT_PROFILE="Generic"
 PROFILE=$(whiptail --title "目标设备" --menu "选择 Target Profile" 20 70 15 $(for p in $PROFILES; do echo "$p" ""; done) 3>&1 1>&2 2>&3) || PROFILE=$DEFAULT_PROFILE
 
-# 写入 .config.seed
+# === 写入 .config.seed ===
 {
   echo "CONFIG_TARGET_${TARGET}=y"
   echo "CONFIG_TARGET_${TARGET}_${SUBTARGET}=y"
@@ -61,7 +61,7 @@ while IFS= read -r plugin; do
   clean_plugin=$(echo "$plugin" | tr -d '\"')
   echo "$clean_plugin" >> "$PLUGIN_LIST"
 
-  # === 自动补全 Passwall 相关依赖 ===
+  # 自动补全 passwall 依赖
   if [[ "$clean_plugin" == "luci-app-passwall" ]]; then
     echo "trojan-go" >> "$PLUGIN_LIST"
     echo "v2ray-core" >> "$PLUGIN_LIST"
