@@ -6,7 +6,7 @@ WORKDIR="$HOME/openwrt_build"
 OUTDIR="$HOME/outbuild"
 CACHE_DIR="$HOME/.openwrt_auto_scripts"
 
-# 本地缓存子脚本路径
+# 定义子脚本路径
 INIT_ENV="$CACHE_DIR/init_env.sh"
 FETCH_SOURCE="$CACHE_DIR/fetch_source.sh"
 CONFIGURE="$CACHE_DIR/configure.sh"
@@ -15,7 +15,7 @@ CLEAN="$CACHE_DIR/clean.sh"
 UPDATER="$CACHE_DIR/update_scripts.sh"
 
 mkdir -p "$WORKDIR" "$OUTDIR"
-sudo chown -R 1000:1000 "$WORKDIR" "$OUTDIR"
+sudo chown -R $(id -u):$(id -g) "$WORKDIR" "$OUTDIR"
 
 while true; do
   clear
