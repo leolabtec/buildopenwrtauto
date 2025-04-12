@@ -1,79 +1,72 @@
 #!/bin/bash
 
 set -e
+
 WORKDIR="$HOME/openwrt_build"
-CONFIG_SEED="$WORKDIR/.config.seed"
-PLUGIN_LIST="$WORKDIR/plugin_list.txt"
-SRC_DIR="$WORKDIR/openwrt"
+OUTDIR="$HOME/outbuild"
+CACHE_DIR="$HOME/.openwrt_auto_scripts"
 
-mkdir -p "$WORKDIR"
-cd "$WORKDIR"
+# 本地缓存子脚本路径
+INIT_ENV="$CACHE_DIR/init_env.sh"
+FETCH_SOURCE="$CACHE_DIR/fetch_source.sh"
+CONFIGURE="$CACHE_DIR/configure.sh"
+COMPILE="$CACHE_DIR/compile.sh"
+CLEAN="$CACHE_DIR/clean.sh"
+UPDATER="$CACHE_DIR/update_scripts.sh"
 
-# === 架构选择（自动识别） ===
-if [ ! -d "$SRC_DIR" ]; then
-  echo "❌ 请先拉取 OpenWrt 源码后再执行配置。"
-  exit 1
-fi
+mkdir -p "$WORKDIR" "$OUTDIR"
+sudo chown -R 1000:1000 "$WORKDIR" "$OUTDIR"
 
-cd "$SRC_DIR"
+while true; do
+  clear
+  echo "==============================="
+  echo " 🛠 OpenWrt 编译系统 主控菜单"
+  echo "==============================="
+  echo "推荐执行顺序：1 → 2 → 3 → 4"
+  echo ""
+  echo "  1) 初始化编译环境（Docker 容器）"
+  echo "  2) 拉取 OpenWrt 源码（稳定版 / 最新版）"
+  echo "  3) 配置架构与插件（图形化）"
+  echo "  4) 编译 OpenWrt 固件"
+  echo "  5) 清理所有缓存"
+  echo "  6) 手动更新子脚本（从 GitHub 拉取最新）"
+  echo "  0) 退出"
+  echo ""
+  read -p "请输入操作编号 [0-6]: " CHOICE
 
-echo "🔍 正在加载平台架构列表..."
-make defconfig > /dev/null 2>&1 || true
-TARGETS=$(make info | grep '^Target:' | awk '{print $2}')
-DEFAULT_TARGET="x86"
+  case "$CHOICE" in
+    1)
+      bash "$INIT_ENV"
+      read -p "按回车继续..." dummy
+      ;;
+    2)
+      bash "$FETCH_SOURCE"
+      read -p "按回车继续..." dummy
+      ;;
+    3)
+      bash "$CONFIGURE"
+      read -p "按回车继续..." dummy
+      ;;
+    4)
+      bash "$COMPILE"
+      read -p "按回车继续..." dummy
+      ;;
+    5)
+      bash "$CLEAN"
+      read -p "按回车继续..." dummy
+      ;;
+    6)
+      bash "$UPDATER"
+      read -p "按回车继续..." dummy
+      ;;
+    0)
+      echo "👋 再见！"
+      exit 0
+      ;;
+    *)
+      echo "❌ 无效输入，请重新选择"
+      sleep 1
+      ;;
+  esac
 
-TARGET=$(whiptail --title "平台选择" --menu "选择 Target System" 20 50 10 $(for t in $TARGETS; do echo "$t" ""; done) 3>&1 1>&2 2>&3) || TARGET=$DEFAULT_TARGET
-
-SUBTARGETS=$(make info | grep "^Target: $TARGET" -A10 | grep '^Subtarget:' | awk -F: '{print $2}' | xargs)
-DEFAULT_SUBTARGET="x86_64"
-SUBTARGET=$(whiptail --title "子平台选择" --menu "选择 Subtarget" 20 50 10 $(for t in $SUBTARGETS; do echo "$t" ""; done) 3>&1 1>&2 2>&3) || SUBTARGET=$DEFAULT_SUBTARGET
-
-PROFILES=$(make info | grep -A50 "^Target: $TARGET/$SUBTARGET" | grep '^Target Profile:' | cut -d: -f2- | xargs)
-DEFAULT_PROFILE="Generic"
-PROFILE=$(whiptail --title "目标设备" --menu "选择 Target Profile" 20 70 15 $(for p in $PROFILES; do echo "$p" ""; done) 3>&1 1>&2 2>&3) || PROFILE=$DEFAULT_PROFILE
-
-# 写入 .config.seed
-{
-  echo "CONFIG_TARGET_${TARGET}=y"
-  echo "CONFIG_TARGET_${TARGET}_${SUBTARGET}=y"
-  echo "CONFIG_TARGET_${TARGET}_${SUBTARGET}_DEVICE_${PROFILE// /_}=y"
-} > "$CONFIG_SEED"
-
-# === 插件选择 ===
-whiptail --title "插件选择" --checklist "请选择需要编译进固件的插件：" 20 70 12 \
-  "luci-app-passwall"   "多协议代理前端"         ON \
-  "luci-app-openclash" "Clash 控制面板"         ON \
-  "luci-app-wireguard" "WireGuard VPN 管理"    ON \
-  "luci-app-mwan3"      "多 WAN 策略管理"       ON \
-  "luci-app-udpxy"      "IPTV 转发工具"          ON \
-  "luci-app-vnstat"     "网络流量监控"          ON \
-  "ip-full"             "增强版 ip 工具集"       ON \
-  "resolveip"           "IP 解析工具"           ON \
-  "luci-app-ddns-go"    "Go 版动态域名解析"     ON \
-  "netdata"             "系统性能监控面板"       ON \
-3>&1 1>&2 2>&3 > selected_plugins.txt
-
-echo "# 插件列表（用于 feeds install）" > "$PLUGIN_LIST"
-
-while IFS= read -r plugin; do
-  clean_plugin=$(echo "$plugin" | tr -d '"')
-  echo "$clean_plugin" >> "$PLUGIN_LIST"
-  
-  # === 自动补全 Passwall 相关依赖 ===
-  if [[ "$clean_plugin" == "luci-app-passwall" ]]; then
-    echo "trojan-go" >> "$PLUGIN_LIST"
-    echo "v2ray-core" >> "$PLUGIN_LIST"
-    echo "v2ray-geodata" >> "$PLUGIN_LIST"
-    echo "hysteria" >> "$PLUGIN_LIST"
-    echo "hysteria2" >> "$PLUGIN_LIST"
-  fi
-
-done < selected_plugins.txt
-
-rm -f selected_plugins.txt
-
-echo "✅ 插件列表已保存至: $PLUGIN_LIST"
-echo "✅ 架构配置已写入: $CONFIG_SEED"
-
-echo "✅ 配置完成，可继续编译。"
-exit 0
+done
