@@ -54,6 +54,18 @@ echo "📦 拷贝输出文件到 $OUTDIR..."
 mkdir -p "$OUTDIR"
 cp -r $OUTPUT_DIR/* "$OUTDIR"/
 
+# === 编译成功后保存配置提示 ===
+echo "\n🎉 编译成功！"
+echo "是否将当前 .config 保存为默认配置？(用于下次复用) [y/N]"
+read -t 30 SAVE_CONFIG
+SAVE_CONFIG=${SAVE_CONFIG,,}
+if [[ "$SAVE_CONFIG" == "y" ]]; then
+  cp .config "$CONFIG_SEED"
+  echo "✅ 配置已保存至 $CONFIG_SEED"
+else
+  echo "ℹ️ 未保存配置，可手动修改 plugin_list.txt/.config.seed"
+fi
+
 # === 提示完成 ===
 echo "✅ 固件已保存至：$OUTDIR"
 echo "🎉 编译完成，Enjoy your OpenWrt!"
