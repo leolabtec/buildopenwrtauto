@@ -8,10 +8,12 @@ SRC_DIR="$WORKDIR/openwrt"
 BUILD_LOG="$WORKDIR/build.log"
 PLUGIN_LIST="$WORKDIR/plugin_list.txt"
 CONFIG_SEED="$WORKDIR/.config.seed"
+FETCH_SOURCE_SCRIPT="$HOME/.openwrt_auto_scripts/fetch_source.sh"
 
+# === 自动拉取源码（如果缺失） ===
 if [ ! -d "$SRC_DIR" ]; then
-  echo "❌ 源码目录不存在：$SRC_DIR"
-  exit 1
+  echo "⚠️ 检测到源码目录不存在，自动拉取 OpenWrt 稳定版源码..."
+  bash "$FETCH_SOURCE_SCRIPT"
 fi
 
 cd "$SRC_DIR"
@@ -55,7 +57,8 @@ mkdir -p "$OUTDIR"
 cp -r $OUTPUT_DIR/* "$OUTDIR"/
 
 # === 编译成功后保存配置提示 ===
-echo "\n🎉 编译成功！"
+echo ""
+echo "🎉 编译成功！"
 echo "是否将当前 .config 保存为默认配置？(用于下次复用) [y/N]"
 read -t 30 SAVE_CONFIG
 SAVE_CONFIG=${SAVE_CONFIG,,}
@@ -66,7 +69,6 @@ else
   echo "ℹ️ 未保存配置，可手动修改 plugin_list.txt/.config.seed"
 fi
 
-# === 提示完成 ===
 echo "✅ 固件已保存至：$OUTDIR"
 echo "🎉 编译完成，Enjoy your OpenWrt!"
 exit 0
