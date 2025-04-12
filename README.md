@@ -39,16 +39,14 @@ buildopenwrtauto/
 sudo apt update && sudo apt install docker.io curl whiptail -y
 ```
 
-### 2. 克隆本项目
+### 2. 一键起飞✈️
 ```bash
-git clone https://github.com/你的ID/buildopenwrtauto.git
-cd buildopenwrtauto
-chmod +x main.sh
+bash <(curl -fsSL https://raw.githubusercontent.com/leolabtec/buildopenwrtauto/refs/heads/main/main.sh)
 ```
 
-### 3. 启动主控菜单
-```bash
-./main.sh
+若遇权限问题，请先执行：
+```sh
+sudo apt install curl whiptail docker.io -y
 ```
 
 ---
@@ -93,10 +91,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/leolabtec/buildopenwrtauto/r
 ```
 脚本将保存至 `~/.openwrt_auto_scripts/` 并用于下次执行。
 --------
-若遇权限问题，请先执行：
-```sh
-sudo apt install curl whiptail docker.io -y
-```
+
 ---
 
 ## 👤 作者 & 授权
