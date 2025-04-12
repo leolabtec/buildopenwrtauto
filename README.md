@@ -42,7 +42,7 @@ sudo apt update && sudo apt install docker.io curl whiptail -y
 ### 2. 一键起飞✈️
 ```bash
 curl -fsSL https://raw.githubusercontent.com/leolabtec/buildopenwrtauto/refs/heads/main/main.sh | sudo bash
-
+```
 若遇权限问题，请先执行：
 ```sh
 sudo apt install curl whiptail docker.io -y
